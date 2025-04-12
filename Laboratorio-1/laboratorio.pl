@@ -20,50 +20,38 @@ empleado(clara, [fuerza]).
 empleado(luis, [logistica]).
 
 empleados([carlos, marisa, juan, jimena, hector, betty, lucia, axel, eva, miguel, clara, luis]). % Consultar hoy.
-
 /*
     verifica(Empleado, TipoTrabajo) tal que dado un empleado y un tipo de 
     trabajo verifica que el empleado está capacitado para realizarlo.
 */
-esta_capacitado(Empleado, TipoTrabajo) :-
+verifica(Empleado, TipoTrabajo) :-
     requiere(_,TipoTrabajo, ListaHabilidades),
     empleado(Empleado, CapacidadEmpleado),
     verificar_capacidad(ListaHabilidades, CapacidadEmpleado).
 
-% Obtiene True si el empleado tiene la capacidad ingresada.
 verificar_capacidad([], _) :- !.
 verificar_capacidad([NHabilidad|RestoHabilidades], Capacidades) :-
     member(NHabilidad, Capacidades), 
     verificar_capacidad(RestoHabilidades, Capacidades).
-
 /*############################################################################################*/
 /*############################################################################################*/
 /*
     puedenRealizar(idTrabajo, Empleados) tal que dado un identificador de trabajo 
     a realizar permite determinar la lista de empleados capacitados para realizarlo
 */
-pueden_realizar(IdTrabajo, ListaEmpleados) :-
-    requiere(IdTrabajo, _, CapacidadesNecesarias),    
+comprobar_empleados([],_, []).
+
+comprobar_empleados([Empleado | Resto], TipoTrabajo, [Empleado | VerificadosResto]) :-
+    verifica(Empleado, TipoTrabajo),!,
+    comprobar_empleados(Resto, TipoTrabajo, VerificadosResto).
+
+comprobar_empleados([_| Resto], TipoTrabajo, VerificadosResto) :-
+    comprobar_empleados(Resto, TipoTrabajo, VerificadosResto).
+
+pueden_realizar(Id,Verificados):-
+    requiere(Id,TipoTrabajo,_),
     empleados(Empleados),
-    determinar_empleados(CapacidadesNecesarias, Empleados, ListaEmpleados).
-
-determinar_empleados(_, _,[]).
-
-determinar_empleados(CapacidadesNecesarias, [Emp|RestoEmpleados], [Emp|Resto]) :-
-    empleado(Emp, CapacidadesEmp),
-    verificar_capacidadades(CapacidadesNecesarias, CapacidadesEmp),
-    determinar_empleados(CapacidadesNecesarias, RestoEmpleados, Resto).
-
-determinar_empleados(CapacidadesNecesarias, [Emp|RestoEmpleados], Resto) :-
-    empleado(Emp, CapacidadesEmp),
-    \+ verificar_capacidadades(CapacidadesNecesarias, CapacidadesEmp),  %El operador \+ significa "no se puede probar" (negación lógica). Esto verifica que el empleado actual no tenga las capacidades necesarias.
-    determinar_empleados(CapacidadesNecesarias, RestoEmpleados, Resto).
-
-verificar_capacidadades([], _).
-verificar_capacidadades([X|Xs], Capacidades) :-
-    member(X, Capacidades),
-    verificar_capacidadades(Xs, Capacidades).
-
+    comprobar_empleados(Empleados,TipoTrabajo,Verificados).
 /*############################################################################################*/
 
 /*############################################################################################*/
@@ -81,7 +69,7 @@ asignar_trabajos([], _, []) :- !.
 asignar_trabajos([Trabajo|Resto], Asignados, [Empleado|Asignacion]) :-
     empleado(Empleado, Capacidades),
     requiere(Trabajo, _, HabilidadesNecesarias),
-    verificar_capacidadades(HabilidadesNecesarias, Capacidades),
+    verificar_capacidad(HabilidadesNecesarias, Capacidades),
     \+ member(Empleado, Asignados), 
     asignar_trabajos(Resto, [Empleado|Asignados], Asignacion).
 
@@ -104,9 +92,12 @@ asignar_trabajos([Trabajo|Resto], Asignados, [Empleado|Asignacion]) :-
 %trabajos_grupales(1, ).
 %trabajos_grupales(3, ).
 %trabajos_grupales(6, ).
-
-
-asignar_trabajos_grupales(TrabajosGrupales, GruposAsignados, TrabajosARechazar) :-
+%trabajos_grupales(CantEmpleados, ).
+% TrabajosGrupales --> Permite obtener todas las combinaciones posibles de la lista de grupos asignados.
+% Grupos Asignados --> Cada elemento relaciona cada trabajo con los empleados que pueden realizarlos (capacidades)
+%asignar_trabajos_grupales(TrabajosGrupales, GruposAsignados, TrabajosARechazar).
     
+
+
 
 
