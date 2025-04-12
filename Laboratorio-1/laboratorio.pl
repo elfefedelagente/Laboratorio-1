@@ -86,14 +86,29 @@ asignar_trabajos([Trabajo|Resto], Asignados, [Empleado|Asignacion]) :-
     vez a cada empleado, y que se debe contar con la cantidad de empleados necesaria. La 
     lista de trabajos a rechazar determina los trabajos que no sería posible realizar.
 */
-trabajos_grupales(tg(2, repartir_urbano),tg(4, repartir_larga_distancia), tg(5, clasificar_paquetes), tg(3, realizar_logistica),tg(6, atencion_publico)).
-% TrabajosGrupales --> Permite obtener todas las combinaciones posibles de la lista de grupos asignados.
-% Grupos Asignados --> Cada elemento relaciona cada trabajo con los empleados que pueden realizarlos (capacidades)
-% asignar_trabajos_grupales(T, T1, L)
+trabajo_grupal(1, 2, repartir_urbano).
+trabajo_grupal(2, 4, repartir_larga_distancia).
+trabajo_grupal(3, 5, clasificar_paquetes).
+trabajo_grupal(4, 3, realizar_logistica).
+trabajo_grupal(5, 6, atencion_publico).
 
-asignar_trabajos_grupales(TrabajosGrupales, GruposAsignados, TrabajosARechazar) :-
-    trabajos_grupales(CantidadEmpleados, TrabajosGrupales),
-    determinar_grupo(CantidadEmpleados, TrabajosGrupales, GruposAsignados).
+asignar_trabajos_grupales([], [], []):-!.
+asignar_trabajos_grupales([Trabajo|RestoTrabajos], [Asignacion|Asignaciones], Rechazados) :-
+    trabajo_grupal(_, CantidadNecesaria, Trabajo),  
+    pueden_realizar_grupal(Trabajo, CantidadNecesaria, [], Asignacion),
+    asignar_trabajos_grupales(RestoTrabajos, Asignaciones, Rechazados).
+asignar_trabajos_grupales([Trabajo|RestoTrabajos], Asignaciones, [Trabajo|Rechazados]) :-
+    asignar_trabajos_grupales(RestoTrabajos, Asignaciones, Rechazados).
 
-determinar_grupo([], _).
-determinar_grupo() :-
+% Helper para encontrar suficientes empleados para un trabajo grupal
+pueden_realizar_grupal(TipoTrabajo, CantidadNecesaria, AsignadosActuales, Grupo) :-
+    CantidadNecesaria > 0,
+    empleado(Empleado, Capacidades),
+    requiere(_, TipoTrabajo, HabilidadesNecesarias),
+    verificar_capacidad(HabilidadesNecesarias, Capacidades),
+    \+ member(Empleado, AsignadosActuales),
+    NuevaCantidad is CantidadNecesaria - 1,
+    pueden_realizar_grupal(TipoTrabajo, NuevaCantidad, [Empleado|AsignadosActuales], Grupo).
+pueden_realizar_grupal(_, 0, Grupo, Grupo).
+
+%  asignar_trabajos_grupales([repartir_urbano, realizar_logistica, atencion_publico], Asignaciones, Rechazados).
