@@ -73,13 +73,11 @@ asignar_trabajos([Trabajo|Resto], Asignados, [Empleado|Asignacion]) :-
     \+ member(Empleado, Asignados), 
     asignar_trabajos(Resto, [Empleado|Asignados], Asignacion).
 
-
-
 /*############################################################################################*/
 /*############################################################################################*/
 /*
     asignarTrabajosGrupales(TrabajosGrupales, GruposAsignados, TrabajosARechazar) 
-    
+
     *Tal que dada una lista de trabajos grupales a realizar, donde cada 
     uno determina además la cantidad de empleados requeridos para su realización, permite 
     obtener todas las combinaciones posibles de la lista de grupos asignados. Cada elemento 
@@ -87,17 +85,15 @@ asignar_trabajos([Trabajo|Resto], Asignados, [Empleado|Asignacion]) :-
     realizarlo teniendo en cuenta sus capacidades, que se le puede asignar sólo un trabajo por 
     vez a cada empleado, y que se debe contar con la cantidad de empleados necesaria. La 
     lista de trabajos a rechazar determina los trabajos que no sería posible realizar.
-
 */
-%trabajos_grupales(1, ).
-%trabajos_grupales(3, ).
-%trabajos_grupales(6, ).
-%trabajos_grupales(CantEmpleados, ).
+trabajos_grupales(tg(2, repartir_urbano),tg(4, repartir_larga_distancia), tg(5, clasificar_paquetes), tg(3, realizar_logistica),tg(6, atencion_publico)).
 % TrabajosGrupales --> Permite obtener todas las combinaciones posibles de la lista de grupos asignados.
 % Grupos Asignados --> Cada elemento relaciona cada trabajo con los empleados que pueden realizarlos (capacidades)
-%asignar_trabajos_grupales(TrabajosGrupales, GruposAsignados, TrabajosARechazar).
-    
+% asignar_trabajos_grupales(T, T1, L)
 
+asignar_trabajos_grupales(TrabajosGrupales, GruposAsignados, TrabajosARechazar) :-
+    trabajos_grupales(CantidadEmpleados, TrabajosGrupales),
+    determinar_grupo(CantidadEmpleados, TrabajosGrupales, GruposAsignados).
 
-
-
+determinar_grupo([], _).
+determinar_grupo() :-
