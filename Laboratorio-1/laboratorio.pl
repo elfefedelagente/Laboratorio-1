@@ -19,11 +19,16 @@ empleado(miguel, [buena_atencion, disponibilidad_horaria]).
 empleado(clara, [fuerza]).
 empleado(luis, [logistica]).
 
+% Lista de empleados
 empleados([carlos, marisa, juan, jimena, hector, betty, lucia, axel, eva, miguel, clara, luis]). % Consultar hoy.
-/*
-    verifica(Empleado, TipoTrabajo) tal que dado un empleado y un tipo de 
-    trabajo verifica que el empleado está capacitado para realizarlo.
-*/
+
+% Lista de trabajos grupales, con la cantidad de empleados necesarios
+trabajo_grupal(1, 2, repartir_urbano).
+trabajo_grupal(2, 4, repartir_larga_distancia).
+trabajo_grupal(3, 5, clasificar_paquetes).
+trabajo_grupal(4, 3, realizar_logistica).
+trabajo_grupal(5, 6, atencion_publico).
+/* Verifica que el empleado esta capacitado para realizarl determinado trabajo. */
 verifica(Empleado, TipoTrabajo) :-
     requiere(_,TipoTrabajo, ListaHabilidades),
     empleado(Empleado, CapacidadEmpleado),
@@ -33,12 +38,9 @@ verificar_capacidad([], _) :- !.
 verificar_capacidad([NHabilidad|RestoHabilidades], Capacidades) :-
     member(NHabilidad, Capacidades), 
     verificar_capacidad(RestoHabilidades, Capacidades).
-/*############################################################################################*/
-/*############################################################################################*/
-/*
-    puedenRealizar(idTrabajo, Empleados) tal que dado un identificador de trabajo 
-    a realizar permite determinar la lista de empleados capacitados para realizarlo
-*/
+
+/* ------------------------------------------------------------------ */
+
 comprobar_empleados([],_, []).
 
 comprobar_empleados([Empleado | Resto], TipoTrabajo, [Empleado | VerificadosResto]) :-
@@ -47,68 +49,54 @@ comprobar_empleados([Empleado | Resto], TipoTrabajo, [Empleado | VerificadosRest
 
 comprobar_empleados([_| Resto], TipoTrabajo, VerificadosResto) :-
     comprobar_empleados(Resto, TipoTrabajo, VerificadosResto).
-
+/* Permite determinar la lista de empleados capacitados para realizar un trabajo dado su id */
 pueden_realizar(Id,Verificados):-
     requiere(Id,TipoTrabajo,_),
     empleados(Empleados),
     comprobar_empleados(Empleados,TipoTrabajo,Verificados).
-/*############################################################################################*/
 
-/*############################################################################################*/
-/*
-    asignarTrabajos(Trabajos, Asignaciones)
-    Tal que dada una lista de trabajos a realizar, permite obtener todas las combinaciones posibles de lista de asignaciones, 
-    donde cada elemento relaciona cada trabajo con un empleado que puede realizarlo, 
-    teniendo en cuenta sus capacidades y que se le puede asignar sólo un trabajo por 
-    vez.
-*/
+/* Permite obtener todas las combinaciones posibles de lista de asignaciones*/
 asignar_trabajos(Trabajos, Asignaciones) :-
-    asignar_trabajos(Trabajos, [], Asignaciones).
+    asignar_trabajos(Trabajos, [], [], Asignaciones).
 
-asignar_trabajos([], _, []) :- !.
-asignar_trabajos([Trabajo|Resto], Asignados, [Empleado|Asignacion]) :-
+/* Cambia el acumulador para construir pares Trabajo-Empleado */
+asignar_trabajos([], _, Asignaciones, Asignaciones) :- !.
+
+asignar_trabajos([Trabajo|RestoTrabajos], Asignados, Parcial, Asignaciones) :-
     empleado(Empleado, Capacidades),
-    requiere(Trabajo, _, HabilidadesNecesarias),
+    requiere(Trabajo, TipoTrabajo, HabilidadesNecesarias),
     verificar_capacidad(HabilidadesNecesarias, Capacidades),
-    \+ member(Empleado, Asignados), 
-    asignar_trabajos(Resto, [Empleado|Asignados], Asignacion).
+    \+ member(Empleado, Asignados),
+    NuevoParcial = [trabajo(TipoTrabajo, Empleado)|Parcial],
+    asignar_trabajos(RestoTrabajos, [Empleado|Asignados], NuevoParcial, Asignaciones).
 
-/*############################################################################################*/
-/*############################################################################################*/
-/*
-    asignarTrabajosGrupales(TrabajosGrupales, GruposAsignados, TrabajosARechazar) 
+/* Permite obtener todas las combinaciones posibles de la lista de grupos asignados */
 
-    *Tal que dada una lista de trabajos grupales a realizar, donde cada 
-    uno determina además la cantidad de empleados requeridos para su realización, permite 
-    obtener todas las combinaciones posibles de la lista de grupos asignados. Cada elemento 
-    de la lista de grupos asignados relaciona cada trabajo con los empleados que pueden 
-    realizarlo teniendo en cuenta sus capacidades, que se le puede asignar sólo un trabajo por 
-    vez a cada empleado, y que se debe contar con la cantidad de empleados necesaria. La 
-    lista de trabajos a rechazar determina los trabajos que no sería posible realizar.
-*/
-trabajo_grupal(1, 2, repartir_urbano).
-trabajo_grupal(2, 4, repartir_larga_distancia).
-trabajo_grupal(3, 5, clasificar_paquetes).
-trabajo_grupal(4, 3, realizar_logistica).
-trabajo_grupal(5, 6, atencion_publico).
+asignar_trabajos_grupales(Trabajos, Asignaciones, Rechazados) :-
+    asignar_trabajos_grupales(Trabajos, [], [], Asignaciones, Rechazados).
 
-asignar_trabajos_grupales([], [], []):-!.
-asignar_trabajos_grupales([Trabajo|RestoTrabajos], [Asignacion|Asignaciones], Rechazados) :-
-    trabajo_grupal(_, CantidadNecesaria, Trabajo),  
-    pueden_realizar_grupal(Trabajo, CantidadNecesaria, [], Asignacion),
-    asignar_trabajos_grupales(RestoTrabajos, Asignaciones, Rechazados).
-asignar_trabajos_grupales([Trabajo|RestoTrabajos], Asignaciones, [Trabajo|Rechazados]) :-
-    asignar_trabajos_grupales(RestoTrabajos, Asignaciones, Rechazados).
+asignar_trabajos_grupales([], _, AsignacionesAcum, AsignacionesAcum, []).
+asignar_trabajos_grupales([TrabajoID|Resto], Ocupados, AsigAcum, AsignacionesFinales, RechazadosFinales) :-
+    trabajo_grupal(TrabajoID, Cantidad, TipoTrabajo),
+    buscar_empleados_disponibles(TipoTrabajo, Cantidad, Ocupados, Grupo),
+    actualizar_ocupados(Grupo, Ocupados, NuevosOcupados),
+    asignar_trabajos_grupales(Resto, NuevosOcupados, [grupo(TipoTrabajo, Grupo)|AsigAcum], AsignacionesFinales, RechazadosFinales).
+asignar_trabajos_grupales([TrabajoID|Resto], Ocupados, AsigAcum, AsignacionesFinales, [TrabajoID|RechazadosFinales]) :-
+    asignar_trabajos_grupales(Resto, Ocupados, AsigAcum, AsignacionesFinales, RechazadosFinales).
 
-% Helper para encontrar suficientes empleados para un trabajo grupal
-pueden_realizar_grupal(TipoTrabajo, CantidadNecesaria, AsignadosActuales, Grupo) :-
-    CantidadNecesaria > 0,
+/* Agrega empleados nuevos a la lista de ocupados */
+actualizar_ocupados([], Ocupados, Ocupados).
+actualizar_ocupados([E|Es], Ocupados, [E|Nuevos]) :-
+    actualizar_ocupados(Es, Ocupados, Nuevos).
+
+/* Encuentra grupo de empleados disponibles y válidos */
+buscar_empleados_disponibles(_, 0, _, []) :- !.
+buscar_empleados_disponibles(TipoTrabajo, Cantidad, Ocupados, [Empleado|Resto]) :-
+    Cantidad > 0,
     empleado(Empleado, Capacidades),
-    requiere(_, TipoTrabajo, HabilidadesNecesarias),
-    verificar_capacidad(HabilidadesNecesarias, Capacidades),
-    \+ member(Empleado, AsignadosActuales),
-    NuevaCantidad is CantidadNecesaria - 1,
-    pueden_realizar_grupal(TipoTrabajo, NuevaCantidad, [Empleado|AsignadosActuales], Grupo).
-pueden_realizar_grupal(_, 0, Grupo, Grupo).
+    \+ member(Empleado, Ocupados),
+    requiere(_, TipoTrabajo, Habilidades),
+    verificar_capacidad(Habilidades, Capacidades),
+    NuevaCantidad is Cantidad - 1,
+    buscar_empleados_disponibles(TipoTrabajo, NuevaCantidad, [Empleado|Ocupados], Resto).
 
-%  asignar_trabajos_grupales([repartir_urbano, realizar_logistica, atencion_publico], Asignaciones, Rechazados).
